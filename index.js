@@ -1,24 +1,43 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const admin = require('firebase-admin');
-const auth = process.env.auth;
-// Initialize Firebase Admin SDK
-const serviceAccount = require('./path/to/serviceAccountKey.json'); // Replace with your service account key file path
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-const db = admin.firestore();
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3040;
 
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.once('open', () => {
+  console.log('Connected to MongoDB');
+});
+
+// Define mongoose schema
+const registrationSchema = new mongoose.Schema({
+  teamName: String,
+  leaderName: String,
+  leaderNum: String,
+  memName: String,
+  memNum: String
+});
+
+// Create mongoose model
+const Registration = mongoose.model('Registration', registrationSchema);
+
+// Middleware
 app.use(bodyParser.json());
 
+// Route to handle registration
 app.post('/register', async (req, res) => {
   try {
     const { teamName, leaderName, leaderNum, memName, memNum } = req.body;
 
-    const docRef = await db.collection('registrations').add({
+    // Create a new registration document
+    const registration = new Registration({
       teamName: teamName,
       leaderName: leaderName,
       leaderNum: leaderNum,
@@ -26,12 +45,17 @@ app.post('/register', async (req, res) => {
       memNum: memNum
     });
 
-    res.status(200).json({ message: 'Registration successful', id: docRef.id });
+    // Save the registration document
+    await registration.save();
+
+    res.status(200).json({ message: 'Registration successful', registration: registration });
   } catch (error) {
     console.error('Error registering:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
