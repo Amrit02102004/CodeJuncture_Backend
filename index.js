@@ -51,6 +51,7 @@ app.post('/register', async (req, res) => {
     const existingMember = await Registration.findOne({ $or: [{ memName: memName }, { memNum: memNum }] });
 
     if (existingMember) {
+      console.log("Mem Found");
       return res.status(400).json({ error: 'Member name or registration number already exists' });
     }
 
@@ -66,7 +67,7 @@ app.post('/register', async (req, res) => {
     // Save the registration document
     await registration.save();
 
-    res.status(200).json({ message: 'Registration successful', registration: registration });
+    res.status(200).json({ message: 'Registration successful' });
   } catch (error) {
     console.error('Error registering:', error);
     res.status(500).json({ error: 'Internal server error' });
