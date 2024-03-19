@@ -15,6 +15,16 @@ db.once('open', () => {
 const cors = require('cors');
 app.use(cors({ origin: true }));
 
+const rateLimit = require('express-rate-limit');
+// Define rate limiting options
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: 'Too many requests from this IP, please try again later',
+});
+
+// Apply the rate limiter to the specified route
+app.use('/register', limiter);
 
 const registrationSchema = new mongoose.Schema({
   teamName: String,
